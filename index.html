@@ -1,0 +1,197 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AB GAMES - Desafio Mental</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#05080f;color:white;
+ font-family:Arial,sans-serif;text-align:center;
+}
+header{padding:25px;color:#00bfff;font-size:27px;font-weight:bold}
+main{max-width:650px;margin:auto;padding:20px}
+h1{color:#00bfff;text-shadow:0 0 15px #008cff}
+.card{
+ background:#101a2a;border:1px solid #008cff;
+ border-radius:15px;padding:25px;margin-top:20px;
+ box-shadow:0 0 15px #003c66;
+}
+button{
+ background:#007bff;color:white;border:0;
+ padding:13px 20px;border-radius:8px;
+ font-size:16px;font-weight:bold;margin:8px;cursor:pointer;
+}
+button:hover{background:#00bfff}
+button:disabled{opacity:.5;cursor:default}
+input{
+ padding:14px;width:90%;max-width:350px;
+ border-radius:8px;border:1px solid #008cff;
+ background:#05080f;color:white;font-size:18px;text-align:center;
+}
+.hidden{display:none}
+#mensagem{min-height:25px;color:#00d9ff;font-weight:bold}
+#dicaTexto{color:#ffd166}
+.voltar{background:#303b50}
+</style>
+</head>
+<body>
+
+<header>🅰️🅱️ AB GAMES</header>
+<main>
+
+<section id="menu">
+<h1>DESAFIO MENTAL</h1>
+<p>Desafie seus limites.</p>
+<div class="card">
+<h2>🧠 Teste sua inteligência!</h2>
+<p>20 desafios para provar sua capacidade.</p>
+<p>Acerto: +100 pontos | Dica: -20 pontos</p>
+<button onclick="comecar()">COMEÇAR</button>
+</div>
+</section>
+
+<section id="jogo" class="hidden">
+<h1>FASE <span id="numero">1</span></h1>
+<p>Progresso: <span id="progresso">1/20</span></p>
+<p>🏆 Pontos: <span id="pontos">0</span></p>
+<div class="card">
+<h2 id="pergunta"></h2>
+<input id="resposta" placeholder="Sua resposta" autocomplete="off">
+<br>
+<button id="responderBtn" onclick="verificar()">RESPONDER</button>
+<button id="dicaBtn" onclick="dica()">💡 DICA (-20)</button>
+<p id="mensagem"></p>
+<p id="dicaTexto"></p>
+<button class="voltar" onclick="voltar()">⬅ VOLTAR AO MENU</button>
+</div>
+</section>
+
+<section id="fim" class="hidden">
+<h1>🏆 VOCÊ VENCEU!</h1>
+<div class="card">
+<h2>PARABÉNS!</h2>
+<p>Você concluiu os 20 desafios!</p>
+<h1 id="final"></h1>
+<button onclick="comecar()">JOGAR NOVAMENTE</button>
+<button class="voltar" onclick="voltar()">VOLTAR AO MENU</button>
+</div>
+</section>
+
+</main>
+
+<script>
+const desafios=[
+{p:"2, 4, 6, 8, ?",r:"10",d:"Some 2."},
+{p:"A, B, C, D, ?",r:"e",d:"Qual letra vem depois do D?"},
+{p:"5, 10, 15, 20, ?",r:"25",d:"Some 5."},
+{p:"A1, B2, C3, D4, ?",r:"e5",d:"Letra e número avançam juntos."},
+{p:"3, 6, 12, 24, ?",r:"48",d:"O número dobra."},
+{p:"Z, Y, X, W, ?",r:"v",d:"O alfabeto está andando para trás."},
+{p:"1, 4, 9, 16, ?",r:"25",d:"Pense nos quadrados dos números."},
+{p:"B2, D4, F6, H8, ?",r:"j10",d:"As letras e os números avançam de dois em dois."},
+{p:"100, 80, 60, 40, ?",r:"20",d:"Diminua 20."},
+{p:"1, 1, 2, 3, 5, 8, ?",r:"13",d:"Some os dois números anteriores."},
+{p:"A, D, G, J, ?",r:"m",d:"Avance três letras."},
+{p:"2, 6, 12, 20, 30, ?",r:"42",d:"As diferenças aumentam de dois em dois."},
+{p:"C3, F6, I9, L12, ?",r:"o15",d:"Avance três letras e três números."},
+{p:"81, 27, 9, 3, ?",r:"1",d:"Divida por 3."},
+{p:"AB, CD, EF, GH, ?",r:"ij",d:"Cada grupo tem duas letras seguidas."},
+{p:"1A, 2C, 3F, 4J, ?",r:"5o",d:"Os saltos entre letras aumentam."},
+{p:"7, 14, 28, 56, ?",r:"112",d:"Multiplique por 2."},
+{p:"M, K, I, G, ?",r:"e",d:"Volte duas letras no alfabeto."},
+{p:"4A, 8B, 12C, 16D, ?",r:"20e",d:"Os números avançam de quatro em quatro."},
+{p:"2, 3, 5, 8, 12, 17, ?",r:"23",d:"Os aumentos são 1, 2, 3, 4, 5..."}
+];
+
+let atual=0;
+let pontuacao=0;
+let usouDica=false;
+let bloqueado=false;
+
+function mostrar(id){
+ ["menu","jogo","fim"].forEach(x=>
+ document.getElementById(x).classList.add("hidden"));
+ document.getElementById(id).classList.remove("hidden");
+}
+
+function comecar(){
+ atual=0;
+ pontuacao=0;
+ mostrar("jogo");
+ carregar();
+}
+
+function carregar(){
+ bloqueado=false;
+ usouDica=false;
+ document.getElementById("numero").textContent=atual+1;
+ document.getElementById("progresso").textContent=
+ (atual+1)+"/"+desafios.length;
+ document.getElementById("pontos").textContent=pontuacao;
+ document.getElementById("pergunta").textContent=desafios[atual].p;
+ document.getElementById("resposta").value="";
+ document.getElementById("mensagem").textContent="";
+ document.getElementById("dicaTexto").textContent="";
+ document.getElementById("responderBtn").disabled=false;
+ document.getElementById("dicaBtn").disabled=false;
+}
+
+function normalizar(t){
+ return t.toLowerCase().normalize("NFD")
+ .replace(/[\u0300-\u036f]/g,"")
+ .replace(/\s/g,"");
+}
+
+function verificar(){
+ if(bloqueado)return;
+ let resposta=normalizar(document.getElementById("resposta").value);
+ if(!resposta){
+ document.getElementById("mensagem").textContent="Digite uma resposta!";
+ return;
+ }
+
+ if(resposta===normalizar(desafios[atual].r)){
+ bloqueado=true;
+ pontuacao+=100;
+ document.getElementById("pontos").textContent=pontuacao;
+ document.getElementById("mensagem").textContent="🎉 ACERTOU! +100 PONTOS!";
+ document.getElementById("responderBtn").disabled=true;
+ document.getElementById("dicaBtn").disabled=true;
+
+ setTimeout(()=>{
+ atual++;
+ if(atual>=desafios.length){
+ document.getElementById("final").textContent=pontuacao+" pontos";
+ mostrar("fim");
+ }else carregar();
+ },1200);
+ }else{
+ document.getElementById("mensagem").textContent=
+ "❌ Resposta incorreta! Tente novamente.";
+ }
+}
+
+function dica(){
+ if(usouDica||bloqueado)return;
+ pontuacao=Math.max(0,pontuacao-20);
+ usouDica=true;
+ document.getElementById("pontos").textContent=pontuacao;
+ document.getElementById("dicaTexto").textContent=
+ "💡 "+desafios[atual].d;
+ document.getElementById("dicaBtn").disabled=true;
+}
+
+function voltar(){
+ bloqueado=true;
+ mostrar("menu");
+}
+
+document.getElementById("resposta").addEventListener("keydown",e=>{
+ if(e.key==="Enter")verificar();
+});
+</script>
+</body>
+</html>
